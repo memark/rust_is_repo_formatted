@@ -1,0 +1,9 @@
+[package]
+name = "rust-is-repo-formatted"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+clap = "4.0.10"
+git2 = "0.15.0"
+tempfile = "3.3.0"
