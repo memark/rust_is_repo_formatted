@@ -1,4 +1,4 @@
-use std::fs;
+use std::{ fs, process::{ self, Command } };
 
 use clap::Parser;
 use git2::Repository;
@@ -6,7 +6,7 @@ use git2::Repository;
 #[derive(Parser, Debug)]
 #[command(author, version)]
 struct Args {
-    #[arg(default_value_t = String::from("alexcrichton/git2-rs"))]
+    #[arg(default_value_t = String::from("https://github.com/alexcrichton/git2-rs"))]
     github_repo: String,
 }
 
@@ -16,16 +16,24 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     let tempdir = tempfile::tempdir()?;
     println!("{:?}\n", tempdir);
 
-    let url = format!("https://github.com/{}", args.github_repo);
-    Repository::clone(&url, &tempdir)?;
+    Repository::clone(&args.github_repo, &tempdir)?;
 
     let paths = fs::read_dir(&tempdir)?;
     for path in paths {
         println!("{}", path?.path().display());
     }
 
-    Ok(())
-}
+    let output = Command::new("sh")
+        .arg("-c")
+        .arg("cargo fmt --check")
+        .current_dir(tempdir.as_ref())
+        .output()?;
 
-// Kör rustfmt (finns API?)
-// Skriv ut om repot är välformatterat eller ej
+    if output.status.success() {
+        println!("Repo is well-formatted according to rustfmt.");
+        process::exit(0);
+    } else {
+        println!("Repo is not well-formatted according to rustfmt.");
+        process::exit(1);
+    }
+}
